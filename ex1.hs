@@ -49,7 +49,8 @@ creDeb (Ext f ((d,s,m) : h)) | isCred m = sumFF (creDeb (Ext f h)) (getValor m,0
 -- 4. Defina a função saldo :: Extracto -> Float que devolve o saldo final que resulta da execução de todos os movimentos no extracto sobre o saldo inicial.
 saldo :: Extracto -> Float
 saldo (Ext f []) = f
-saldo (Ext f ((d,s,m) : h)) = saldo (Ext f h) - getValor m 
+saldo (Ext f ((d,s,m) : h)) | isCred m = saldo (Ext f h) + getValor m
+                            | otherwise = saldo (Ext f h) - getValor m 
 
 
 {- 
