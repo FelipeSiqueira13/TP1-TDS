@@ -34,10 +34,22 @@ filtro (Ext f ((d, s, m) : h)) sl | elem s sl = [(d,m)] ++ filtro (Ext f h) sl
 
  
 -- 3. Defina a função creDeb :: Extracto -> (Float,Float), que retorna o total de créditos e de débitos de um extracto no primeiro e segundo elementos de um par, respectivamente.
+isCred :: Movimento -> Bool
+isCred (Credito _) = True
+isCred (Debito _) = False
 
+sumFF :: (Float,Float) -> (Float,Float) -> (Float,Float)
+sumFF (a1, a2) (b1, b2) = (a1+b1,a2+b2)
 
+creDeb :: Extracto -> (Float,Float)
+creDeb (Ext f []) = (0,0)
+creDeb (Ext f ((d,s,m) : h)) | isCred m = sumFF (creDeb (Ext f h)) (getValor m,0)
+                             | otherwise = sumFF (creDeb (Ext f h)) (0,getValor m)
 
 -- 4. Defina a função saldo :: Extracto -> Float que devolve o saldo final que resulta da execução de todos os movimentos no extracto sobre o saldo inicial.
+saldo :: Extracto -> Float
+saldo (Ext f []) = f
+saldo (Ext f ((d,s,m) : h)) = saldo (Ext f h) - getValor m 
 
 
 {- 
