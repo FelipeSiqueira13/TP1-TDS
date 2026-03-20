@@ -1,10 +1,8 @@
+module Bank where
+
 import Data.List
 import Test.HUnit
 import Test.QuickCheck
-import Test.QuickCheck.Function
-import Test.QuickCheck.Gen (genFloat)
-import Foreign (free)
-import Data.Ratio 
 
 data Movimento = Credito Float
                 | Debito Float
@@ -69,96 +67,3 @@ são pedidas na UC de programação funcional.
 Defina ainda geradores de modo a produzir extratos o mais semelhantes possível com extratos bancários reais. Por exemplo, num extrato típico há mais movimentos que corrrespondem a débitos do que a créditos (que tipicamente pode ser apenas um: o salário do titular da conta bancária).
 Tenha ainda em conta que a lista de extratos Extratos tem noção de ordem, isto é, o valor inicial do extrato seguinte deve corresponder ao resultado da função saldo do extrato anterior.
 -}
-
-----------------------------------------  GERADORES ----------------------------------------
-
-genMovimento :: Gen Movimento
-genMovimento = do
-                tipo <- frequency[(50, return Debito),(50, return Credito)]
-                valor <- choose(1,50000)
-                return $ tipo (fromRational (valor % 100))
-
-genData :: Gen Data
-genData = do
-        dia <- elements[1..31]
-        mes <- elements[1..12]
-        ano <- elements[2000..2026]
-        return $ D dia mes ano
-
-genDinheiro :: Gen Float
-genDinheiro = do
-    v <- choose (1, 50000) :: Gen Integer
-    return (fromRational (v % 100))
-
-
-genOperacoes :: Int -> Gen [(Data, String, Movimento)]
-genOperacoes s = do
-    datah <- genData
-    str   <- vectorOf 5 (elements ['A'..'Z'])
-    mov   <- genMovimento
-    rest  <- frequency[(1, return []),(s, genOperacoes (s - 1))]
-    return ((datah, str, mov) : rest)
-
-instance Arbitrary Extracto where
-    arbitrary = sized genExtracto
-genExtracto :: Int -> Gen Extracto
-genExtracto s = do
-            dinIni <- genDinheiro
-            lista <- genOperacoes s
-            return (Ext dinIni lista)
-            
-instance Arbitrary Extractos where
-    arbitrary = sized genExtractos
-
-genExtractos :: Int -> Gen Extractos
-genExtractos s = do
-    xs <- genExtractos' (s-1)
-    return (Extractos xs)
-
-genExtractos' :: Int -> Gen [Extracto]
-genExtractos' s = do
-    atual <- genExtracto 3
-    resto <- frequency [(1, return []), (s, genExtractos' (s - 1))]
-    return (atual : resto)
-            
-            
----------------------------------------- PROPRIEDADES ----------------------------------
-
-------- movimento -------------------------------------------------------------------------------
-
--- Os movimentos não podem ser negativos nem 0
-
-prop_movPos :: Movimento -> Bool 
-prop_movPos (Credito x) = x > 0
-prop_movPos (Debito x) = x > 0
-
-prop_creDebPos :: Extracto -> Bool
-prop_creDebPos e = (fst $ creDeb e) >= 0 && (snd $ creDeb e) >= 0
-
--- Os floats devem ter no máximo duas casas décimais
-
--- prop_float :: Float -> Bool
--- prop_float x = 
-
-------- data -------------------------------------------------------------------------------
-
--- Máximos de dias num mês
-
-prop_maxDate :: Data -> Bool
-prop_maxDate (D d m a) | m == 2 && (a%4) == 0 = d<=29
-                       | m == 2 && (a%4) /= 0 = d<=28
-                       | elem m [1,3,5,7,8,10,12] = d<=31
-                       | otherwise = d<=30
-
--- Mínimo de dias num mês
-
-prop_minDate :: Data -> Bool
-prop_minDate (D d m a) = d>=1
-
--- Uma data não pode ser no futuro
-
--- formatDate :: -> Date
--- formatDate = getCurrentTime 
-
---pop_movDate :: Extracto -> Bool
---prop_movDate (Ext _ ((d, _, _): t)) | formatDate getCurrentTime
