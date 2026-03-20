@@ -62,17 +62,15 @@ saldo (Ext f ((d,s,m) : h)) | isCred m = saldo (Ext f h) + getValor m
 
 
 {- 
-Exerc´ıcio
-Utilizando a biblioteca QuickCheck em Haskell ou Hypothesis em Python, defina propriedades que os extratos banc´ario devem obdecer. Para definir propriedades interessantes
-poder´a ter necessidade de definir algumas fun¸c˜oes sobre extratos banc´arios semelhantes `as que
-s˜ao pedidas na UC de programa¸c˜ao funcional.
-Defina ainda geradores de modo a produzir extratos o mais semelhantes poss´ıvel com extratos banc´arios reais. Por exemplo, num extrato t´ıpico h´a mais movimentos que corrrespondem
-a d´ebitos do que a cr´editos (que tipicamente pode ser apenas um: o sal´ario do titular da conta
-banc´aria).
-Tenha ainda em conta que a lista de extratos Extratos tem no¸c˜ao de ordem, isto ´e, o valor
-inicial do extrato seguinte deve corresponder ao resultado da fun¸c˜ao saldo do extrato anterior.
+Exercício ------------------------------------------------------------------------------------
+Utilizando a biblioteca QuickCheck em Haskell ou Hypothesis em Python, defina propriedades que os extratos bancário devem obdecer. 
+Para definir propriedades interessantes poderá ter necessidade de definir algumas funções sobre extratos bancários semelhantes às que
+são pedidas na UC de programação funcional.
+Defina ainda geradores de modo a produzir extratos o mais semelhantes possível com extratos bancários reais. Por exemplo, num extrato típico há mais movimentos que corrrespondem a débitos do que a créditos (que tipicamente pode ser apenas um: o salário do titular da conta bancária).
+Tenha ainda em conta que a lista de extratos Extratos tem noção de ordem, isto é, o valor inicial do extrato seguinte deve corresponder ao resultado da função saldo do extrato anterior.
 -}
 
+----------------------------------------  GERADORES ----------------------------------------
 
 genMovimento :: Gen Movimento
 genMovimento = do
@@ -124,3 +122,43 @@ genExtractos' s = do
     return (atual : resto)
             
             
+---------------------------------------- PROPRIEDADES ----------------------------------
+
+------- movimento -------------------------------------------------------------------------------
+
+-- Os movimentos não podem ser negativos nem 0
+
+prop_movPos :: Movimento -> Bool 
+prop_movPos (Credito x) = x > 0
+prop_movPos (Debito x) = x > 0
+
+prop_creDebPos :: Extracto -> Bool
+prop_creDebPos e = (fst $ creDeb e) >= 0 && (snd $ creDeb e) >= 0
+
+-- Os floats devem ter no máximo duas casas décimais
+
+-- prop_float :: Float -> Bool
+-- prop_float x = 
+
+------- data -------------------------------------------------------------------------------
+
+-- Máximos de dias num mês
+
+prop_maxDate :: Data -> Bool
+prop_maxDate (D d m a) | m == 2 && (a%4) == 0 = d<=29
+                       | m == 2 && (a%4) /= 0 = d<=28
+                       | elem m [1,3,5,7,8,10,12] = d<=31
+                       | otherwise = d<=30
+
+-- Mínimo de dias num mês
+
+prop_minDate :: Data -> Bool
+prop_minDate (D d m a) = d>=1
+
+-- Uma data não pode ser no futuro
+
+-- formatDate :: -> Date
+-- formatDate = getCurrentTime 
+
+--pop_movDate :: Extracto -> Bool
+--prop_movDate (Ext _ ((d, _, _): t)) | formatDate getCurrentTime
