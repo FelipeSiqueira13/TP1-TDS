@@ -18,6 +18,9 @@ data Extracto = Ext Float [(Data, String, Movimento)]
 data Extractos = Extractos [Extracto]
                 deriving Show
 
+--------------------------------------------------------
+duasCasas :: Float -> Float
+duasCasas x = fromInteger (round (x * 100)) / 100
 
 -- 1. Construa a função extValor :: Extracto -> Float -> [Movimento] que produz uma lista de todos os movimentos (créditos ou débitos) superiores a um determinado valor.
 
@@ -55,9 +58,9 @@ creDeb (Ext f ((d,s,m) : h)) | isCred m = sumFF (creDeb (Ext f h)) (getValor m,0
 
 -- 4. Defina a função saldo :: Extracto -> Float que devolve o saldo final que resulta da execução de todos os movimentos no extracto sobre o saldo inicial.
 saldo :: Extracto -> Float
-saldo (Ext f []) = f
-saldo (Ext f ((d,s,m) : h)) | isCred m = saldo (Ext f h) + getValor m
-                            | otherwise = saldo (Ext f h) - getValor m 
+saldo (Ext f []) = duasCasas f
+saldo (Ext f ((d,s,m) : h)) | isCred m = duasCasas (saldo (Ext f h)) +  (getValor m)
+                            | otherwise = duasCasas (saldo (Ext f h)) - duasCasas (getValor m )
 
 
 {- 

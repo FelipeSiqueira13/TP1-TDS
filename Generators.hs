@@ -5,9 +5,6 @@ import Data.Ratio ((%))
 import Test.QuickCheck
 ----------------------------------------  GERADORES ----------------------------------------
 
-duasCasas :: Float -> Float
-duasCasas x = fromInteger (round (x * 100)) / 100
-
 genDinheiro :: Gen Float
 genDinheiro = do
     v <- choose (1, 50000) :: Gen Integer
