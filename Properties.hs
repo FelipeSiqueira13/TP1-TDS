@@ -3,6 +3,11 @@ import Generators
 import Test.QuickCheck
 ---------------------------------------- PROPRIEDADES ----------------------------------
 
+-- Os floats devem ter no máximo duas casas décimais
+
+-- prop_float :: Float -> Bool
+-- prop_float x = 
+
 ------- movimento -------------------------------------------------------------------------------
 
 -- Os movimentos não podem ser negativos nem 0
@@ -11,13 +16,9 @@ prop_movPos :: Movimento -> Bool
 prop_movPos (Credito x) = x > 0
 prop_movPos (Debito x) = x > 0
 
+-- um extrato não pode ter movimntos negativos. isto é preciso sendo que já temos a prop_movPos ???????
 prop_creDebPos :: Extracto -> Bool
 prop_creDebPos e = (fst $ creDeb e) >= 0 && (snd $ creDeb e) >= 0
-
--- Os floats devem ter no máximo duas casas décimais
-
--- prop_float :: Float -> Bool
--- prop_float x = 
 
 ------- data -------------------------------------------------------------------------------
 

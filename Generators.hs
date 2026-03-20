@@ -13,9 +13,13 @@ genMovimento = do
 
 genData :: Gen Data
 genData = do
-        dia <- elements[1..31]
         mes <- elements[1..12]
         ano <- elements[2000..2026]
+        let maxDia = if mes == 2 && (ano `mod` 4) == 0 then 29
+                   else if mes == 2 && (ano `mod` 4) /= 0 then 28
+                   else if elem mes [1,3,5,7,8,10,12] then 31
+                   else 30
+        dia <- elements[1..maxDia]
         return $ D dia mes ano
 
 genDinheiro :: Gen Float

@@ -3,6 +3,7 @@ module Bank where
 import Data.List
 import Test.HUnit
 import Test.QuickCheck
+import Test.QuickCheck.Function
 
 data Movimento = Credito Float
                 | Debito Float
