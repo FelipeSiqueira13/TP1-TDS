@@ -1,22 +1,22 @@
 module Generators where
 
 import Bank
+import Data.List (sortBy)
 import Data.Ratio ((%))
 import Test.QuickCheck
 ----------------------------------------  GERADORES ----------------------------------------
 
 genDinheiro :: Gen Float
 genDinheiro = do
-    v <- choose (1, 50000) :: Gen Integer
-    return (duasCasas (fromRational (v % 100)))
+    v <- choose (1.0, 50000.0) :: Gen Float
+    return (duasCasas v)
 
 genDinheiro' :: Float -> Gen Float
 genDinheiro' limite
     | limite <= 0 = return 0
     | otherwise = do
-        let maxCentavos = max 1 (floor (limite * 100))
-        v <- choose (1, maxCentavos) :: Gen Integer
-        return (duasCasas (fromRational (v % 100)))
+        v <- choose (0.01, limite) :: Gen Float
+        return (duasCasas v)
 
 
 genMovimento :: Gen Movimento
@@ -81,16 +81,16 @@ instance Arbitrary Extracto where
     arbitrary = sized genExtracto
 genExtracto :: Int -> Gen Extracto
 genExtracto s = do
-            dinIni <- genDinheiro
-            mes <- elements[1..12]
-            ano <- elements[2000..2026]
-            lista <- genOperacoes s mes ano dinIni
-            return (Ext dinIni lista)
+    dinIni <- genDinheiro
+    mes <- elements [1..12]
+    ano <- elements [2000..2026]
+    lista <- genOperacoes s mes ano dinIni
+    return (Ext dinIni (ordenaOps lista))
 
 genExtracto' :: Int -> Int -> Int -> Float -> Gen Extracto
 genExtracto' s mes ano dinIni = do
-            lista <- genOperacoes s mes ano dinIni
-            return (Ext dinIni lista)
+    lista <- genOperacoes s mes ano dinIni
+    return (Ext dinIni (ordenaOps lista))
             
 instance Arbitrary Extractos where
     arbitrary = sized genExtractos
@@ -112,3 +112,9 @@ genExtractos' s mes ano dinIni = do
     let novoSaldo = duasCasas (saldo atual)
     resto <- genExtractos' (s - 1) mesatual anoatual novoSaldo
     return (atual : resto)
+
+cmpData :: Data -> Data -> Ordering
+cmpData (D d1 m1 a1) (D d2 m2 a2) = compare (a1, m1, d1) (a2, m2, d2)
+
+ordenaOps :: [(Data, String, Movimento)] -> [(Data, String, Movimento)]
+ordenaOps = sortBy (\(d1, _, _) (d2, _, _) -> cmpData d1 d2)
