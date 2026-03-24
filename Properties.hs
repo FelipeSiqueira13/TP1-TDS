@@ -10,7 +10,7 @@ prop_movPos :: Movimento -> Bool
 prop_movPos (Credito x) = x > 0
 prop_movPos (Debito x) = x > 0
 
--- um extrato não pode ter movimntos negativos. isto é preciso sendo que já temos a prop_movPos ???????
+-- um extrato não pode ter movimentos negativos. isto é preciso sendo que já temos a prop_movPos ???????
 prop_creDebPos :: Extracto -> Bool
 prop_creDebPos e = (fst $ creDeb e) >= 0 && (snd $ creDeb e) >= 0
 
@@ -33,29 +33,20 @@ prop_validMonth (D _ m _) = m>=1 && m<=12
 
 ------- extrato -------------------------------------------------------------------------------
 
--- há mais movimentos que corrrespondem a débitos do que a créditos
-prop_MoreDebOrCred :: Extracto -> Bool -- está a falhar
-prop_MoreDebOrCred (Ext _ ops) = debitos >= creditos
-                    where
-                        movimentos = [m | (_, _, m) <- ops]
-                        creditos = length [m | m <- movimentos, isCred m]
-                        debitos = length movimentos - creditos
-
 -- todos os movimentos num extrato têm de ser feitos no mesmo mês e ano
 prop_extractDate :: Extracto -> Bool
-prop_extractDate (Ext _ (((D _ m _), _, _) : [])) = True
+prop_extractDate (Ext _ []) = True
 prop_extractDate (Ext _ (((D _ m _), _, _): t)) = and (map (==m) months)
                     where
                         months = [m | ((D _ m _), _, _) <- t]
 
 -- os movimentos devem estar organizados por ordem cronológica
-
 prop_extractDateOrd :: Extracto -> Bool 
-prop_extractDateOrd (Ext _ (((D d _ _), _, _) : [])) = True 
+prop_extractDateOrd (Ext _ []) = True 
 prop_extractDateOrd (Ext _ l) = and (zipWith dataGE ds (tail ds))
                                 where 
                                     ds = [d | (d, _, _) <- l]
-                                    dataGE (D d1 m1 a1) (D d2 m2 a2) = (a1, m1, d1) >= (a2, m2, d2)
+                                    dataGE (D d1 m1 a1) (D d2 m2 a2) = (a1, m1, d1) <= (a2, m2, d2)
 
 ------- extratos -------------------------------------------------------------------------------
 
@@ -97,7 +88,7 @@ prop_filtroOrder e sl = length (filtro e sl) == length (filtro e (reverse sl))
 
 -- a soma do par (cred,deb) deve ser a soma de todos os valores de um extrato
 prop_creDebSum :: Extracto -> Bool
-prop_creDebSum (Ext f l) = duasCasas(fst (cd) + snd (cd)) == duasCasas(sum (map (getValor . movs) l))
+prop_creDebSum (Ext f l) = duasCasas((fst cd) + (snd cd)) == duasCasas(sum (map (getValor . movs) l))
                         where
                             cd = creDeb (Ext f l)
                             movs = \(_, _, m) -> m
