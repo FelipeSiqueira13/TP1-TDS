@@ -52,8 +52,10 @@ prop_extractDate (Ext _ (((D _ m _), _, _): t)) = and (map (==m) months)
 
 prop_extractDateOrd :: Extracto -> Bool 
 prop_extractDateOrd (Ext _ (((D d _ _), _, _) : [])) = True 
-prop_extractDateOrd (Ext _ l) = and (zipWith (>=) ds (tail ds))
-                                where ds = [d | (d, _, _) <- l]
+prop_extractDateOrd (Ext _ l) = and (zipWith dataGE ds (tail ds))
+                                where 
+                                    ds = [d | (d, _, _) <- l]
+                                    dataGE (D d1 m1 a1) (D d2 m2 a2) = (a1, m1, d1) >= (a2, m2, d2)
 
 ------- extratos -------------------------------------------------------------------------------
 
