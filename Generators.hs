@@ -1,22 +1,22 @@
 module Generators where
 
 import Bank
-import Data.List (sortBy)
 import Data.Ratio ((%))
 import Test.QuickCheck
 ----------------------------------------  GERADORES ----------------------------------------
 
 genDinheiro :: Gen Float
 genDinheiro = do
-    v <- choose (1.0, 50000.0) :: Gen Float
-    return (duasCasas v)
+    v <- choose (1, 50000) :: Gen Integer
+    return (duasCasas (fromRational (v % 100)))
 
 genDinheiro' :: Float -> Gen Float
 genDinheiro' limite
     | limite <= 0 = return 0
     | otherwise = do
-        v <- choose (0.01, limite) :: Gen Float
-        return (duasCasas v)
+        let maxCentavos = max 1 (floor (limite * 100))
+        v <- choose (1, maxCentavos) :: Gen Integer
+        return (duasCasas (fromRational (v % 100)))
 
 
 genMovimento :: Gen Movimento
@@ -64,33 +64,45 @@ genDia mes ano = do
         dia <- elements[1..maxDia]
         return $ D dia mes ano
 
+maxDiaMes :: Int -> Int -> Int
+maxDiaMes mes ano
+    | mes == 2 && (ano `mod` 4) == 0 = 29
+    | mes == 2 = 28
+    | elem mes [1,3,5,7,8,10,12] = 31
+    | otherwise = 30
 
+genDiaApos :: Int -> Int -> Int -> Gen Data
+genDiaApos mes ano diaAnterior = do
+    let maxDia = maxDiaMes mes ano
+    dia <- elements [diaAnterior + 1 .. maxDia]
+    return (D dia mes ano)
 
-genOperacoes :: Int -> Int -> Int -> Float -> Gen [(Data, String, Movimento)]
-genOperacoes s mes ano dinheiro
+genOperacoes :: Int -> Int -> Int -> Float -> Int -> Gen [(Data, String, Movimento)]
+genOperacoes s mes ano dinheiro diaAnterior
     | s <= 0 = return []
+    | diaAnterior >= maxDiaMes mes ano = return []
     | otherwise = do
-        datah <- genDia mes ano
+        datah@(D diaAtual _ _) <- genDiaApos mes ano diaAnterior
         str <- vectorOf 5 (elements ['A'..'Z'])
         mov <- genMovimento' dinheiro
         let novoDinheiro = saldoAposMovimento dinheiro mov
-        rest <- frequency [(1, return []), (s, genOperacoes (s - 1) mes ano novoDinheiro)]
+        rest <- frequency [(1, return []), (s, genOperacoes (s - 1) mes ano novoDinheiro diaAtual)]
         return ((datah, str, mov) : rest)
 
 instance Arbitrary Extracto where
     arbitrary = sized genExtracto
 genExtracto :: Int -> Gen Extracto
 genExtracto s = do
-    dinIni <- genDinheiro
-    mes <- elements [1..12]
-    ano <- elements [2000..2026]
-    lista <- genOperacoes s mes ano dinIni
-    return (Ext dinIni (ordenaOps lista))
+            dinIni <- genDinheiro
+            mes <- elements[1..12]
+            ano <- elements[2000..2026]
+            lista <- genOperacoes s mes ano dinIni 0
+            return (Ext dinIni lista)
 
 genExtracto' :: Int -> Int -> Int -> Float -> Gen Extracto
 genExtracto' s mes ano dinIni = do
-    lista <- genOperacoes s mes ano dinIni
-    return (Ext dinIni (ordenaOps lista))
+            lista <- genOperacoes s mes ano dinIni 0
+            return (Ext dinIni lista)
             
 instance Arbitrary Extractos where
     arbitrary = sized genExtractos
@@ -112,9 +124,3 @@ genExtractos' s mes ano dinIni = do
     let novoSaldo = duasCasas (saldo atual)
     resto <- genExtractos' (s - 1) mesatual anoatual novoSaldo
     return (atual : resto)
-
-cmpData :: Data -> Data -> Ordering
-cmpData (D d1 m1 a1) (D d2 m2 a2) = compare (a1, m1, d1) (a2, m2, d2)
-
-ordenaOps :: [(Data, String, Movimento)] -> [(Data, String, Movimento)]
-ordenaOps = sortBy (\(d1, _, _) (d2, _, _) -> cmpData d1 d2)
